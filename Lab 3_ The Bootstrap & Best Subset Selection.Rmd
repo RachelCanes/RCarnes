@@ -1,6 +1,6 @@
 ---
-title: "ML 627 Lab: The Bootstrap & Best Subset Selection"
-author: "Rachel Carnes, Britnie Smith"
+title: "ML 627 Lab3: The Bootstrap & Best Subset Selection"
+author: "Rachel Carnes and Britnie Smith"
 output: word_document
 date: '2022-03-27'
 ---
@@ -8,31 +8,35 @@ date: '2022-03-27'
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-1. Consider the mpg variable.
-a. Find the bootstrap estimate, standard error, and 95% confidence interval for the IQR of mpg.
-```{r}
-library(readr)
-library(dplyr)
+
+**1. Consider the mpg variable.**
+```{r, echo= FALSE}
+library(tidyverse)
 library (ISLR2)
 library(boot)
 library(tidyr)
-auto <- read.csv("C:/Users/Rachel Carnes/OneDrive/Class Machine Learning/Week 6/Auto.csv")
+library(broom)
+library(GGally)
+library(leaps)
+auto <- read_csv("Auto.csv")
+```
 
+**a. Find the bootstrap estimate, standard error, and 95% confidence interval for the IQR of mpg**.
+Bootstrap Statistic estimate: 12 mpg
+Standard Error:0.834014
+95% confidence interval of 10.50000 mpg to 13.29312 mpg
+
+```{r}
 auto %>% 
   mutate(horsepower = as.numeric(horsepower))-> auto
 auto <- auto[!is.na(auto$horsepower),c(1,4)]
-summary(auto)
-View(auto)
-
-dim(auto)
 
 IQR(auto$mpg, na.rm = FALSE, type = 7)
-
 IQR.fn <- function(X,index){ 
   return(IQR(X[index]))
 }
   
-B <- 100 # Number of bootstrap samples
+B <- 1000 # Number of bootstrap samples
 n <- length(auto$mpg) # Sample size (and the size of each bootstrap sample)
 
   
@@ -46,69 +50,51 @@ alpha <- 0.05
 c(quantile( bs.mpg$t, alpha/2 ),quantile( bs.mpg$t, 1-alpha/2 ))
 ```
 
-b. Find the bootstrap estimate, standard error, and 95% confidence interval for any other parameter of interest to you about the distribution of mpg. (For example, you could examine the minimum, or the maximum, or the 10th percentile of mpg.)
+**b. Find the bootstrap estimate, standard error, and 95% confidence interval for any other parameter of interest to you about the distribution of mpg. (For example, you could examine the minimum, or the maximum, or the 10th percentile of mpg.)**
+
+*We decided to explore the minimum and maximum.* 
+Min estimate is 9 mpg.
+Standard error of 0.5818441.
+95% confidence interval of  9 mpg to 11mpg. 
+
+Max estimate is 46.6 mpg.
+Standard Error of 1.082351.
+95% confidence interval of44.0mpg to 46.6 mpg. 
 ```{r}
-
-
+#Min
 summary(auto$mpg)
 min(auto$mpg, na.rm = FALSE)
 
 min.fn <- function(X,index){ 
   return(min(X[index]))
 }
-  
-B <- 100 # Number of bootstrap samples. 
+B <- 10000 # Number of bootstrap samples. 
 n <- length(auto$mpg) # Sample size (and the size of each bootstrap sample)
 
-
-  
 set.seed(20)
 bs.mpg_2 <- boot(auto$mpg, min.fn, R=B)
 bs.mpg_2
 sd(bs.mpg_2$t)
 
-
 # Bootstrap confidence interval
 alpha <- 0.05
 c(quantile( bs.mpg_2$t, alpha/2 ),quantile( bs.mpg_2$t, 1-alpha/2 ))
 
+```
 
+```{r}
+#Max
+max(auto$mpg, na.rm = FALSE)
 
-# Bootstrap samples 1000
-
-IQR(auto$mpg, na.rm = FALSE, type = 7)
-
-IQR.fn <- function(X,index){ 
-  return(IQR(X[index]))
-}
-  
-B1 <- 1000 # Number of bootstrap samples
-n <- length(auto$mpg) # Sample size (and the size of each bootstrap sample)
-
-  
-set.seed(20)
-bs.mpg_3 <- boot(auto$mpg, IQR.fn, R=B1)
-bs.mpg_3
-sd(bs.mpg_3$t)
-
-# Bootstrap confidence interval
-alpha <- 0.05
-c(quantile( bs.mpg_3$t, alpha/2 ),quantile( bs.mpg_3$t, 1-alpha/2))
-
-
-# Bootstrap Samples 10000
-IQR(auto$mpg, na.rm = FALSE, type = 7)
-
-IQR.fn <- function(X,index){ 
-  return(IQR(X[index]))
+max.fn <- function(X,index){ 
+  return(max(X[index]))
 }
   
 B2 <- 10000 # Number of bootstrap samples
 n <- length(auto$mpg) # Sample size (and the size of each bootstrap sample)
 
-  
 set.seed(20)
-bs.mpg_4 <- boot(auto$mpg, IQR.fn, R=B2)
+bs.mpg_4 <- boot(auto$mpg, max.fn, R=B2)
 bs.mpg_4
 sd(bs.mpg_4$t)
 
@@ -117,14 +103,10 @@ alpha <- 0.05
 c(quantile( bs.mpg_4$t, alpha/2 ),quantile( bs.mpg_4$t, 1-alpha/2 ))
 ```
 
-2. Consider modeling mpg using a quadratic (polynomial of degree = 2) relationship with horsepower.
-
-a. Plot the least squares estimate of the quadratic relationship along with the observed data.
-
-
+**2. Consider modeling mpg using a quadratic (polynomial of degree = 2) relationship with horsepower.**
+**a. Plot the least squares estimate of the quadratic relationship along with the observed data.**
 ```{r}
- 
-auto %>%
+ auto %>%
 mutate(horsepower2 = horsepower^2) ->auto2
 auto2
 
@@ -132,66 +114,51 @@ lm_auto <- lm_traincube1 <- lm(mpg ~ horsepower + horsepower2 , data = auto2)
 lm_auto
 plot(lm_auto)
 
-
-
-
-
+tidy(lm_auto)
 ```
 
-b. Plot B = 100 bootstrap estimates of the relationship (evaluated at the observed values of horsepower).
+**b. Plot B = 100 bootstrap estimates of the relationship (evaluated at the observed values of horsepower).**
 ```{r}
+lm(mpg ~ horsepower + horsepower2, data=auto2)->lm_mhh
+tidy(lm_mhh)
 
 slopes.fn <- function(dataset,index){
   coefs <- coef(lm(mpg ~ horsepower + horsepower2, data=auto2[index, ]))
   return(coefs)
 }
+slopes.fn
 
-slopes.fn(auto2,sample(n,10))
+slopes.fn(auto2, sample(n,10, replace= TRUE))
 
-
-  
-B <- 100 # Number of bootstrap samples.  
-n <- length(auto2) # Sample size (and the size of each bootstrap sample)
-
+B <- 100 
 set.seed(30)
-bs.reg <- boot(Auto, slopes.fn, R=B) # This may take a while to run with our current B. 
+bs.reg <- boot(Auto, slopes.fn, R=B) 
 head(bs.reg$t)
+par(mfrow=c(1,2))
+hist(bs.reg$t[,1],main='histogram of b0 estimates',xlab='b0_b')
+hist(bs.reg$t[,2],main='histogram of b1 estimates',xlab='b1_b')
+hist(bs.reg$t[,3],main='histogram of b2 estimates',xlab='b2_b')
 
+apply(bs.reg$t,2,mean) 
+apply(bs.reg$t,2,sd) 
+apply(bs.reg$t,2,quantile,probs=c(0.025,0.975)) #
 
-# Bootstrap confidence interval
-alpha <- 0.05
-c(quantile( bs.mpg_5$t, alpha/2 ),quantile( bs.mpg_5$t, 1-alpha/2 ))
-
-
+plot(bs.reg$t)
 ```
 
-3. Consider now a model to predict mpg (or a transformation of mpg) using the eight other features (variables) in the data set.
+**3. Consider now a model to predict mpg (or a transformation of mpg) using the eight other features (variables) in the data set.**
  
-```{r}
-library(GGally)
-library(broom)
-library(tidyverse)
-
-auto2 <- read.csv("C:/Users/Rachel Carnes/OneDrive/Class Machine Learning/Week 6/Auto.csv")
+```{r, message= FALSE}
+#Had issues with data so had to reload it here
+auto2 <- read_csv("Auto.csv")
 auto2 %>% 
   mutate(horsepower = as.numeric(horsepower)) %>%
   select(-name)-> auto3
-View(auto3)
-ggpairs(auto3)
 
-fit.auto <- lm(mpg ~ weight + horsepower + cylinders + displacement + acceleration + year + origin , auto3)
-summary(fit.auto)
-
-aout1 <- augment(fit.auto)
-qplot(x = .fitted, y= .resid, data = aout1) +geom_hline(yintercept = 0)
-
-# Transformed mpg
+# Transformed mpg after running residual plots removed from this output.
 
 auto3 %>%
   mutate(mpg2 = log(mpg)) -> auto4
-
-View(auto4)
-ggpairs(auto4)
 
 fit.auto2 <- lm(mpg2 ~ weight + horsepower + cylinders + displacement + acceleration + year + origin , auto4)
 summary(fit.auto2)
@@ -199,26 +166,19 @@ summary(fit.auto2)
 aout2 <- augment(fit.auto2)
 qplot(x = .fitted, y= .resid, data = aout2) +geom_hline(yintercept = 0)
 
-
 ```
 
-a. Conduct preliminary exploratory analyses to determine if any adjustments need to be made to meet the assumptions of the multiple linear regression model. Briefly summarize what adjustments you are making to any variables and why. Do not include any output here. Just state what you examined and your corresponding final adjustments.
+**a. Conduct preliminary exploratory analyses to determine if any adjustments need to be made to meet the assumptions of the multiple linear regression model. Briefly summarize what adjustments you are making to any variables and why. Do not include any output here. Just state what you examined and your corresponding final adjustments.**
 
-Looking at the full data set we are seeing that there is curvature and unequal variance. This is showing us that we do need to transform some variables. We decided to transform mpg(the response). We logged mpg to reduce the variance and curvature. 
+In our exploratory analysis of the data we observed some curvature and unequal variance. In order to satisfy all linear regression assumptions we found logging our response variable was the best transformation choice to satisfy linearity and equal variance. We additionally liked this transformation because it preserved our model's interpretability. 
 
 
+**b. Incorporate any adjustments from part (a). Use the regsubsets() function in the leaps library to perform best subset selection in order to choose the best model.**
 ```{r}
-
-```
-
-b. Incorporate any adjustments from part (a). Use the regsubsets() function in the leaps library to perform best subset selection in order to choose the best model.
-```{r}
-
-library(leaps)
 ?regsubsets
-regfit_full <- regsubsets(mpg ~ ., data = auto3)
+regfit_full <- regsubsets(mpg2 ~ ., data = auto4)
 
-summary (regfit_full)
+summary(regfit_full)
 
 res.sum <- summary(regfit_full)
 data.frame(
@@ -226,7 +186,6 @@ data.frame(
   CP = which.min(res.sum$cp),
   BIC = which.min(res.sum$bic)
 )
-
 
 par(mfrow = c(2,2))
 plot(res.sum$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
@@ -242,25 +201,22 @@ points(6, res.sum$cp[6], col = "red", cex = 2,pch = 20)
 plot(res.sum$bic, xlab = "Number of Variables",ylab = "BIC", type = "l")
 which.min(res.sum$bic)
 points(3, res.sum$bic[3], col = "red", cex = 2,  pch = 20)
-
-
-
-
-
 ```
 
-i. What is the best model obtained according to the Cp criterion?
-  According to Cp the best model has 6 variables which are cylinders, displacement, horsepower, weight, year, and origin. It removed acceleration. 
+**i. What is the best model obtained according to the Cp criterion?**
 
-ii. What is the best model obtained according to the BIC criterion?
-  According to BIC the best model has 3 variables which are weight, year, and origin. It removed cylinders, displacement, horsepower, acceleration.
+According to Cp  criterion the best model has 6 variables which are cylinders, displacement, horsepower, weight, year, and origin. It removed acceleration.
 
-iii. What is the best model obtained according to the adjusted-R 2 criterion?
-  According to Adjusted-R2 the best model has 6 variables which are cylinders, displacement, horsepower, weight, year, origin. It removed acceleration. 
+**ii. What is the best model obtained according to the BIC criterion?**
 
-iv. Provide plots as evidence for your choices.
-```{r}
+According to BIC the best model has 3 variables which are weight, year, and origin. It removed cylinders, displacement, horsepower, and acceleration.
 
+**iii. What is the best model obtained according to the adjusted-R 2 criterion?**
+
+According to Adjusted-R2 the best model has 6 variables which are cylinders, displacement, horsepower, weight, year, origin. It removed acceleration. 
+
+**iv. Provide plots as evidence for your choices.**
+```{r, error=TRUE}
 par(mfrow=c(1,1))
 plot(regfit_full, scale = "r2")
 plot(regfit_full, scale = "adjr2")
@@ -269,26 +225,42 @@ plot(regfit_full, scale = "bic")
 
 
 par (mfrow = c(2, 2))
-plot (reg.summary$rss , xlab = " Number of Variables ",
-ylab = " RSS ", type = "l")
+plot(res.sum$rss , xlab = "Number of Variables", 
+      ylab = "RSS", type = "l")
 
-plot (reg.summary$adjr2 , xlab = " Number of Variables ",
-ylab = " Adjusted RSq ", type = "l")
+plot(res.sum$adjr2 , xlab = "Number of Variables", 
+      ylab = "Adjusted RSq", type = "l")
 ```
 
-c. Compare the results in (b) to those from forward stepwise selection and backwards stepwise selection.
+**c. Compare the results in (b) to those from forward stepwise selection and backwards stepwise selection.**
 
-Forward Stepwise is giving us an RSS or ... and and R^2 of ... Keep in mind this is not the best to use when finding the best possible model because it fails to select the best possible two variable model. 
+Forward stepwise selection chooses 8 variables when using adjusted R squared and CP criterion and 7 variables for BIC, leaving out origin. Backward stepwise selection chooses an 7 variable model when using adjusted R squared and CP both leaving out displacement, and a 6 variable model for BIC, leaving out origin and displacement.
+Overall using the stepwise selection process seems to more inclusive of variables overall. In part B the model with the most variables had 6 but here that was our lowest. We found it interesting as I had initially though the stepwise systems may be more exclusionary or discerning in some way. 
 
-Backward stepwise is giving us an RSS of ... and an R^2 or...This requires that the number of samples,n, be larger than the number of variables,p. 
 ```{r}
-
-regfit.fwd <- regsubsets(mpg ~ ., data = auto3, nvmax = 19, method = "forward")
+#Forward 
+regfit.fwd <- regsubsets(mpg2 ~ ., data = auto4, nvmax = 19, method = "forward")
 summary(regfit.fwd)
+ 
+res.sumf <- summary(regfit.fwd)
+data.frame(
+  Adj.R2 = which.max(res.sumf$adjr2),
+  CP = which.min(res.sumf$cp),
+  BIC = which.min(res.sumf$bic)
+)
+#plot(regfit.fwd, scale = "bic")
 
-
-regfit.bwd <- regsubsets(mpg ~ ., data = auto3,nvmax = 19, method = "backward")
+#Backward 
+regfit.bwd <- regsubsets(mpg2 ~ ., data = auto4,nvmax = 19, method = "backward")
 summary(regfit.bwd)
-
+res.sumb <- summary(regfit.bwd)
+data.frame(
+  Adj.R2 = which.max(res.sumb$adjr2),
+  CP = which.min(res.sumb$cp),
+  BIC = which.min(res.sumb$bic)
+)
+plot(regfit.bwd, scale = "bic") 
+plot(regfit.bwd, scale = "Cp") 
+plot(regfit.bwd, scale = "adjr2") 
 ```
 
