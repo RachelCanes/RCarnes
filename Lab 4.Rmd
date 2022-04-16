@@ -1,0 +1,284 @@
+---
+title: "Lab 4"
+author: "Rachel Carnes and Britnie Smith" 
+output: word_document
+date: '2022-04-09'
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+  
+n <- 100 
+sig <- 1 
+b <- c(1.5,-2,-0.5,1) # beta coefficients 
+set.seed(10) 
+x <- sort(round(runif(n,-2,2),2)) # predictor x 
+eps <- rnorm(n,0,sig) # random noise 
+ones <- vector(length=n)+1 
+x2 <- x^2 
+x3 <- x^3 
+xmat <- cbind(ones, x, x2, x3) 
+head(xmat) 
+fx <- xmat%*%b # true nonlinear relationship is cubic  
+y <- fx + eps  
+data <- data.frame(x,y) # this is the sample data 
+plot(x,fx,type='l',lwd=2,ylim=c(-5,5),  
+     main='True relationship between y and x with generated sample') 
+points(x,y,pch=19)
+
+?runif
+View(data)
+
+```
+
+1.  Write out the true functional relationship that is displayed in this
+    plot. That is, from the code, identify the coefficients 𝛽0,𝛽1,𝛽2,
+    and 𝛽3 in the generating model 𝑦= 𝛽0 + 𝛽1𝑥+ 𝛽2𝑥2 + 𝛽3𝑥3 +𝜀.
+
+y =1.5 -2*x -0.5*x2 + 1\*x3 +𝜀 is the model.
+
+```{r}
+
+```
+
+2.  Use the regsubsets() function to perform best subset selection in
+    order to choose the best model from among the predictors x, x 2, x
+    3, x 4, ..., x 10.
+
+```{r}
+
+x4 <- x^4
+x5 <- x^5
+x6 <- x^6
+x7 <- x^7
+x8 <- x^8
+x9 <- x^9
+x10 <- x^10
+b <- c(1.5,-2,-0.5,1)
+
+xmat2 <- cbind(ones, x, x2, x3, x4, x5, x6, x7, x8, x9, x10) 
+head(xmat2) 
+
+library(leaps)
+
+regfit_full <- regsubsets(y ~ x + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, data = data)
+
+summary (regfit_full)
+
+res.sum <- summary(regfit_full)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+
+par(mfrow=c(1,1))
+plot(regfit_full, scale = "r2")
+plot(regfit_full, scale = "adjr2")
+plot(regfit_full, scale = "Cp")
+plot(regfit_full, scale = "bic")
+
+dataplot <- lm(y ~ x + x2 + x3, data= data)
+dataplot
+
+dataplot2 <- lm(y ~ x + x2 + x3 + x4, data= data)
+dataplot2
+
+```
+
+a.  What is the best model obtained according to the Cp criterion?
+    Provide the coefficient table of estimates.
+
+Cp is saying the best model has four variables are they are x, x2, x3,
+and x4.
+
+b.  What is the best model obtained according to the BIC? Provide the
+    coefficient table of estimates.
+
+BIC is saying the best model has three variables which are x, x1 and x3.
+
+c.  What is the best model obtained according to the adjusted R2?
+    Provide the coefficient table of estimates.
+
+Adj R2 is saying the best model has four variables are they are x, x2,
+x3, and x4.
+
+d.  Plot each of the best fits on the same plot with the true curve and
+    the data. Comment on your plot and the estimated fits.
+
+???????????????WHAT???????????????????
+
+```{r}
+
+```
+
+3.  Repeat (2) using forward selection and then backwards selection.
+    Compare the results and briefly summarize your findings.
+
+```{r}
+
+regfit.fwd <- regsubsets(y ~ x + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, data = data, nvmax = 19, method = "forward")
+summary(regfit.fwd)
+
+res.sum <- summary(regfit.fwd)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+par(mfrow=c(1,1))
+plot(regfit.fwd, scale = "r2")
+plot(regfit.fwd, scale = "adjr2")
+plot(regfit.fwd, scale = "Cp")
+plot(regfit.fwd, scale = "bic")
+
+plot (res.sum$rss , xlab = " Number of Variables ",
+ylab = " RSS ", type = "l")
+
+regfit.bwd <- regsubsets(y ~ x + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, data = data,nvmax = 19, method = "backward")
+summary(regfit.bwd)
+
+res.sum2 <- summary(regfit.bwd)
+data.frame(
+  Adj.R2 = which.max(res.sum2$adjr2),
+  CP = which.min(res.sum2$cp),
+  BIC = which.min(res.sum2$bic)
+)
+
+par(mfrow=c(1,1))
+plot(regfit.bwd, scale = "r2")
+plot(regfit.bwd, scale = "adjr2")
+plot(regfit.bwd, scale = "Cp")
+plot(regfit.bwd, scale = "bic")
+
+plot (res.sum2$rss , xlab = " Number of Variables ",
+ylab = " RSS ", type = "l")
+
+```
+
+4.  Fit a lasso model using the predictors x, x 2, x 3, x 4, ..., x 10.
+    Use CV to select the optimal tuning parameter, . What value of 
+    did you use? What is the resulting fitted model?\
+
+```{r}
+#what is lambda and what does it do. How is it calculated and how is it used?
+
+
+x4 <- x^4
+x5 <- x^5
+x6 <- x^6
+x7 <- x^7
+x8 <- x^8
+x9 <- x^9
+x10 <- x^10
+b <- c(1.5,-2,-0.5,1)
+dataplot <- lm(y ~ x + x2 + x3, data= data)
+dataplot
+
+dataplot2 <- lm(y ~ x + x2 + x3 + x4, data= data)
+dataplot2
+
+xmat2 <- cbind(ones, x, x2, x3, x4, x5, x6, x7, x8, x9, x10) 
+head(xmat2)
+lasso1 <- glmnet(xmat2, y, alpha = 1, lambda = 0.005529133) # alpha = 1 corresponds to lasso
+cbind(coef(dataplot),coef(lasso1))
+
+
+grid <- 10^seq(10,-2,length=100) # grid of lambda values goes from 10^10 down to 10^-2 = 0.01
+grid  
+lasso.mod <- glmnet(xmat2, y, alpha = 1, lambda = grid) 
+dim(coef(lasso.mod)) # 20 coefficients by 100 lambda values
+
+set.seed(1)
+cv.lasso.mod <- cv.glmnet(xmat2, y, alpha = 1)
+plot(cv.lasso.mod)
+cv.lasso.mod$lambda.min
+
+lassop <- predict(lasso.mod, s=cv.lasso.mod$lambda.min, type="coefficients" )
+
+lassop
+
+
+```
+
+5.  Use a smoothing spline (sm.spline()) from the pspline package to
+    estimate the nonlinear relationship. Use degrees of freedom set to
+    df = 2, 3, 4, 5, 15 and the optimal df chosen by CV. Give the
+    optimal df. Plot each of the estimated fits on the same plot with
+    the true curve and the data. Comment on your plot and the estimated
+    fits.\
+
+```{r}
+library(pspline)
+?sm.spline
+
+pspline2 <- sm.spline(y,x,spar=150)
+pspline2
+
+plot(y,x,pch=19,xlab="y")
+lines(pspline,col=5,lty=4,lwd=3)
+pspline2 <- sm.spline(age,strontium.ratio,df=2)
+pspline3 <- sm.spline(age,strontium.ratio,df=3)
+pspline4 <- sm.spline(age,strontium.ratio,df=4)
+pspline5 <- sm.spline(age,strontium.ratio,df=5)
+pspline15 <- sm.spline(age,strontium.ratio,df=15)
+
+
+# selecting the smoothing parameter using cross-validation
+psplinecv <- sm.spline(age,strontium.ratio,cv=T)
+psplinecv
+lines(psplinecv,col=1,lty=1,lwd=2)
+legtxt <- c("df = 50","df = 25", "df = 5", "df = 3","df CV")
+legend("bottomleft",legtxt,lty=c(2,3,4,5,1),col=c(2,3,4,5,1),lwd=2)
+
+```
+
+6.  Which of all estimates examined (out of the 15 ones examined in (2)
+    -- (5)) provides the best fit to the true relationship, fx? Give
+    support for your response (provide a quantitative measure).
+
+```{r}
+
+```
+
+7.  Is it possible to use principal components regression (or partial
+    least squares) to estimate the nonlinear relationship with the
+    predictors x, x 2, x 3, x 4, ..., x 10? Explain why or why not.\
+    ???
+
+```{r}
+
+
+
+```
+
+8.  Alter one aspect of the simulation setting (such as the true
+    relationship fx, the sample size, or the amount of residual
+    variation in the generated data in sig) and revisit one of the
+    methods (best subsets, forward selection, backward selection, lasso,
+    ridge regression, penalized splines) to see how the method performs
+    at estimating fx. Plot the true fx. and your estimate on the same
+    plot. Give a measure of performance. Submit code for this question.\
+
+We are looking for the smallest RSS because that shows the best fit for
+fx.
+
+```{r}
+
+```
+
+Note that a true simulation study iterates through many randomly
+generated data sets under a given scenario to examine properties of the
+method and the distribution of the estimate.
+
+```{r}
+
+```
